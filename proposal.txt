@@ -1,0 +1,134 @@
+Project Description:
+	Welcome to Pac-man Remastered! This project is my variant of a sequel to the original Pac-man by Namco. Traditionally, the user 
+would be able to control a yellow dot (named pac-man) and move within the walls of a maze, all while collecting points and avoiding
+4 ghosts with varying chasing algorithms. This classic mode will still remain present, but the core portion of this project will feature
+revenge mode. In Pac-man Revenge, the user has the option to control all 4 ghosts instead of a single pac-man. The objective of revenge
+mode is to strategically use the ghosts to put a stop to pac-man before he collects all of the pellets in the maze. 
+
+*******************************************************************************************************************************************
+Competitive Analysis:
+	Several pac-man-like games either have pre-built maps or enable you to manually build them. Building from scratch can be time 
+consuming and not always come out as desired. My project provides randomly generated maps for each level, and permits the user to 
+generate a new map with the press of key if they would like a change. The breadth of the random generation is also not limited to simple
+lines, dots, and shapes. Virtually any 2-dimensionally shaped wall within a reasonable size limit can appear in my game.
+	Further, many of the pac-man projects in 15-112, including some 3-d pac-man variations, do not have smooth graphical movements when
+it comes to the ghosts or pac-man. As my game stores direction values as both a temporary value and a current value, I am able to avoid the 
+unwanted hopping effect and keep movements seemingly continuous. Pac-man Revenge also allows the user to obtain the ghosts perspective
+in chasing pac-man. I have so far come across 1 project that has done this. In spring 2018, a CMU student created an open CV project that 
+allowed one user to control a single ghost. My game allows the ghost controller to toggle between all ghosts and strategically plot 
+coordinated attacks on the poor yellow chomper. I believe that this core feature will make my game more enjoyable from a strategic point 
+of view. Since pac-man has the ability to temporarily eat ghosts, this game will emphasize keeping as many ghosts alive as possible to 
+improve the chances of winning.
+	Controlling the ghosts of course means that pac-man himself is not controlled by a human. My project will feature a complex 
+pathfinding AI for pac-man, one superior to that of that ghosts. This component is the most user interactive and possibly algorithmically
+complex part of the whole project.
+
+*******************************************************************************************************************************************
+Structural Plan:
+- mapGen.py will be dedicated to the map generation procedure for the game 
+This file contains one function (boardGenerate()) which is a conglomoration of sequentially called functions that randomly develop the map
+in an assembly-line fashion. The first set of functions (template functions) will be less complex, somewhat hardcoded functions that 
+initiate the board state to have all of its constant components. Next up comes the function which will generate random chunks of walls in 
+the maze. This function will utilize multiple helper functions which may include calls to themself recursively. This is to ensure the 
+computer generated paths are both aesthetic and complex. The final set of functions, correctors, take the randomly generated map and 
+touch up dead ends, double paths, or any edge cases that the random generator could not account for. They are almost as complex as the 
+random generation of the map itself.
+
+- pac-man_revenge.py will be the main game file
+Pac-man himself will be stored as a maze runner object and the ghosts will be instances of a subclass of the runner object.
+Direction of travel will be marked by two values, a temporary and a current direction. This is to ensure that movements appear continuous
+and allows for better decision making by the computer in determining whether the user is making an illegal move or would like to have their
+move call slightly delayed. Collision detection and map warps at the edges of the board will be stored within the methods of the Runners.
+This file will import mapGen.py and call a single function with optional paramaters every time to generate the board.
+Since drawing hundreds of individual cells is taxing on tkinter, separate functions in this file will be dedicated to condensing wall cells
+together to ensure every wall is drawn with fewer calls to the canvas.create() method. Caching the pellet image data will also be necessary
+in order to avoid drawing the hundreds of pellets.
+Additionally, this file will harbor the movement algorithms of the ghosts. Each ghost depending on its name value, which is stored as an 
+attribute, will have a unique modification to the ai method which a ghost can call. As for pac-man, his AI would be a bit lengthier
+codewise. The decision making portion of pac-man's AI based on calls to pathfinding algorithms will be stored in this file as a function.
+
+- pathfinding.py
+As major pathfinding algorithms are not quite under my belt yet, I can forsee them requiring lots of code. pathfinding.py will be a simple
+file in that its job is to have a main function which takes in a map and the two input tiles on the map and returns the ideal path between 
+the two tiles. Part of the pathfinding process will be to first rewrite a map in terms of a graph of edges and nodes. Intersections will 
+be represented as nodes and an edge will be the length of a path between two nodes. A primary function will be dedicated to just that.
+From here, through recursion presumably it will be possible to code a function that tries the shortest paths/edges that gets closest to the
+target cell/node and outputs the shortest of these paths.
+
+*******************************************************************************************************************************************
+
+Algorithmic Complexity:
+
+Map generation has proved to be a difficult task from a procedural point of view. Even after developing a carefully layed-out plan,
+edge case errors appear in the design of the map such as boxed in paths or dead ends which require individual functions to correct. 
+
+Note the pac-man maze can be thought of as an array of three distinct values: wall cells, path cells, and ghost house cells.
+Wall cells when generated will be marked by boolean True in the maze. After each wall generation, it will be surrounded by path cells
+marked by the None value in python. A wall generates by placing a 1x1 wall tile at an unfilled square of the board. From here 
+a series of functions will be randomly called to randomly stretch the square, up, down, or right into a larger shape. To avoid overlapping
+cells, the wall building function only places and strectches wall cells if the target cell has not been assigned to be a path or wall cell.
+yet. Once a wall is built in entireity, it will be surrounded by path cells by calling a handy surround function. This is more or less how 
+the random function will operate, by trying this procedure if possible at every cell on the board while ensuring no overlaps occur.
+Once the map has been randomized the first corrector function to act on the map is the dead end remover. This function iterates through
+the board and looks for a path cell that can extend to another path cell from only one direction. If this is the case, the first path cell
+under examination will be transformed into a wall cell and the dead end function will recursively call on the only path cell surrounding 
+it. Then comes the double path remover. Any 2 x 2 blocks of path cells found on the board indicates a double path which is undesirable in
+a labyrinth style game. When a 2 x 2 set of path cells is found by this function, it will first try to fill in 1 of the cells without
+creating a dead end. If this is impossible then it will try to fill in 2 at once without creating a dead end. If this is also impossible
+then the 4 cells are left as is because it must be a valid 4 way intersection.
+The final type of cell, ghost house cells which will be marked by boolean value False, should be carved at the end of the map generation 
+alongside a subset of map correction functions. Also ghost house cells only permit entry and exit of the ghosts while functioning like a 
+wall cell for pac-man, but maintain the appearance of a path cell.
+
+Now, consider some of the intricacies of the user interface. If a user makes a move into a wall, the game should ignore the input. 
+However, if a user inputs their move just a fraction of a second early, it could make all the difference between losing a life or not.
+As stated earlier, there are two components to the direction of pac-man or a ghost: the temporary and current components. 
+When a key is pressed in a direction, the temporary component will almost always follow the key press. Once the user moves to the next cell
+of the board, if the temporary move is legal the current direction will be updated and the character will physically change direction.
+If the temporary move is not legal by the time the character is in the center of the next cell, then the temporary direction will be
+updated with the current direction value and the user will remain traveling in the same direction.
+This all said, maneuvering around intersections becomes much simpler and user-friendly now, even more so than the original pac-man! 
+
+Most likely the most algorithmically complex component will be pac-man's AI. Using Dijkstra's or the A* pathfinding algorithm, I believe
+I will have to program pac-man to find paths to each of the four ghosts and the nearest pellet(s). Based on the distance from the ghosts to
+him and the distance from the ghosts to the nearest pellet, pac-man will make a very educated decision on whether or not he should go for 
+gold or run to safety.
+
+Every ghost and pac-man has their own implementation of AI. The ghosts will switch between four ai states, the four being chase, scatter,
+frightened and eaten states. 
+During the frightened state, ghosts will run away from pac-man to avoid being eaten and will have a temporary speed reduction.
+During eaten state, ghosts will become temporarily incapacitated while they scurry back to the ghost house at a brisk speed.
+During scatter state, each of the four ghosts will attempt to run to the four corners of the map to protect the power pellets.
+Finally, the chase state will enable the ghosts to each attack pac-man through different techniques.
+(Red ghost) - Targets the tile that pac-man is on
+(Blue ghost) - Mark a tile two steps ahead of pac-man's face, draw a vector from the red ghost position to the marked tile, and then
+		double this vector to obtain the tile that the blue ghost targets.
+(Pink ghost) - Targets the tile 4 steps in front of pac-man
+(Orange ghost) - Targets the tile that pac-man is on, unless it is within an 8 tile size radius of pac-man. In this case, the orange ghost 
+		targets the bottom left corner.
+
+Ghosts will never be allowed to change direction backwards except during the change of an ai state. While targeting they will always 
+move in a direction that brings them closest to their target if making such a move is legal. A complex path-finding algorithm most likely
+will not be necessary for the ghost's AI, as they only seek to move closer to their target regardless if the path they take is truly
+the shortest one.
+
+*******************************************************************************************************************************************
+
+Timeline Plan:
+- Player implementation and movement controls shortly after TP0
+- Map generation code by Nov 30.
+- Ghost AI by Dec. 2
+- Pac-man AI by Dec. 5
+- User-Interface and true game functionality (proper splash and redirect screens) by Dec. 7
+- Any last touching up to be finished between Dec. 7 and Dec. 9 before the deadline.
+
+*******************************************************************************************************************************************
+
+Version Control:
+Versions will be maintained in my Google Drive. This account can be accessed from any device I log into with my credentials.
+Image of version control is within the deliverable zip folder
+
+*******************************************************************************************************************************************
+
+Module List:
+None before MVP
