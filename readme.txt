@@ -5,6 +5,8 @@ be able to control a yellow dot (named pac-man) and move within the walls of a m
 revenge mode. Just as it sounds, the user has the option to control all 4 ghosts instead of a single pac-man. The objective of revenge
 mode is to strategically use the ghosts to put a stop to pac-man before he collects all of the pellets in the maze.
 
+For a live demonstration of the game, please visit this link: https://youtu.be/aHI_JvaPJiE
+
 Files:
 - pac-man_revenge_v1.1.py (main file to be run)
 - mapGen.py (map generation file)
