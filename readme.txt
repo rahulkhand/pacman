@@ -21,15 +21,14 @@ In-game short-cuts:
 In classic mode, the game checks for when the user has 0 dots remaining in order to advance to the next level.
 Pressing the '-' key should reduce the dot count by 100. It reduces more then 100 when the user has < 200 dots, however the functionality 
 of cheating to the next level still works.
-To reach the game over screen in classic, reduce pac-mans lives by taking damage or pressing 'M'.
+To reach the game over screen in classic, reduce pac-mans lives by taking damage or pressing 'M' (capital M with 'shift'+'m').
 Conversely in revenge mode, the next level is triggered by losing lives and the game over screen is triggered by 0 dots remaining.
 The same cheatcodes still apply, but in reverse order of course.
 
 Pressing 'r' at the beginning of a round can change the map, but this function doesn't work at any other time, funnily enough to prevent
 cheating.
 
-Note: Don't hold the keys down for too long or you could experience some lag or screen freezes. I made a post on piazza about how to reduce 
-the input rate of keyPressed but it did not get answered in time. Also I reccommend using a computer that is plugged in and is relatively 
+Note: Don't hold the keys down for too long or you could experience some lag or screen freezes. Also, I recommend using a computer that is plugged in and is relatively 
 fast.
 
 Other than that hope you enjoy testing my game!
