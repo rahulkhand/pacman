@@ -472,7 +472,7 @@ class App(object):
               app._methodIsOverridden('keyPressed') and
               (not event.key == 'Modifier_Key')):
             app.keyPressed(event)
-            app._redrawAllWrapper() # comment out for input delay
+            #app._redrawAllWrapper()
 
     @_safeMethod
     def _keyReleasedWrapper(app, event):
