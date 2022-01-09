@@ -1,12 +1,12 @@
 # Written by Rahul Khandelwal
-# Last update:  December 9, 2020
+# Last update:  December 22, 2021
 # This is the main executable file which runs all the others
 
 from cmu_112_graphics import *
 from mapGen import *
 from graphAndNodes import *
 from PIL import Image, ImageDraw, ImageFilter
-import string, time, random
+import string, time, random, keyboard
 
 '''Pac-Man logo image from https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.bandainamcoent.com%2Fgames%2Fpac-man&psig=AOvVaw0rTPueYFFT36CvchHzIq4G&ust=1607399210016000&source=images&cd=vfe&ved=0CAIQjRxqFwoTCIjW6-n6uu0CFQAAAAAdAAAAABAM '''
 '''Pac-Man eating dot image from https://images.fastcompany.net/image/upload/w_596,c_limit,q_auto:best,f_auto/fc/1683023-inline-inline-1-why-video-games-were-never-the-same-after-pac-man-burst-into-arcades.jpg'''
@@ -15,6 +15,16 @@ import string, time, random
 #TODO
 # original graphics
 
+def rpath(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 def almostEqualMod1(d1, d2, epsilon=0.01):
     # modified cmu 15-112 function
     return (1 - abs(d2 - d1) < epsilon) or abs(d2 - d1) < epsilon
@@ -22,6 +32,25 @@ def almostEqualMod1(d1, d2, epsilon=0.01):
 def almostEqual(d1, d2, epsilon=10**-7):
     # cmu 15-112 function
     return abs(d2 - d1) < epsilon
+
+def readNum(filename):
+    try:
+        fd = open(rpath(filename), 'r')
+        res = int(fd.read())
+    except:
+        res = 0
+        fd = open(rpath(filename), 'w')
+        fd.write(str(res))
+    fd.close()
+    return res
+
+def writeNum(filename, num):
+    try:
+        fd = open(rpath(filename), 'w')
+        fd.write(str(num))
+        fd.close()
+    except:
+        pass
 
 def appStarted(app):
     setUpSplashWidgets(app)
@@ -43,7 +72,7 @@ def appStarted(app):
     app.splashScreen, app.pauseStarted, app.roundStart = True, False, True
     app.scatter = True
     app.chase = False
-    app.splashImage = Image.open("pacmanSplash.png", "r")
+    app.splashImage = Image.open(rpath("pacmanSplash.png"), "r")
     app.timerCounter = 0
     app.pFactor = 5
     app.maxStretch = 60 # Note: maxStretch must always be divisble by mAcc!
@@ -56,9 +85,9 @@ def appStarted(app):
     app.rightBorder = app.margin + app.cellSize * app.cols
     app.bottomBorder = app.margin + app.cellSize * app.rows
     app.colors = ['turquoise', 'red', 'magenta', 'orange', 'maroon', 'violet']
-    app.colorI = 0
-    app.wallColor = app.colors[0]
-    app.background = 'black' # alternate color: '#000080'
+    app.colorI = readNum('colorchoice.txt') % len(app.colors)
+    app.wallColor = app.colors[app.colorI]
+    app.background = '#000080'
     generateMap(app)
     condenseWalls(app)
     developImage(app)
@@ -148,7 +177,6 @@ def resetPlayers(app):
     # ghosts back off at the start of every spawn
     app.anxious, app.scatter = False, True
     if app.stateFlips > 0:  app.stateFlips -= 1
-    app.pScore -= 10
     app.slow = app.gSpeed / 2
     app.mouth = 20
     app.ang = 360 - 2 * app.maxStretch + 2 * app.mouth
@@ -253,7 +281,7 @@ def realGhost(image):
     return transparent
 
 def developGhosts(app):
-    ghosts = Image.open("pacman_ghosts.png", "r")
+    ghosts = Image.open(rpath("pacman_ghosts.png"), "r")
     lefthalf = (20, 20, ghosts.width/2, ghosts.height - 30)
     righthalf = (ghosts.width/2, 20, ghosts.width - 20, ghosts.height - 30)
     redPink = ghosts.crop(lefthalf)
@@ -267,7 +295,7 @@ def developGhosts(app):
     predicates = [isEye for _ in range(len(app.ghostSprites[0]))]
     app.eyesOnly = list(map(filterImage, app.ghostSprites[0], predicates))
 
-    bG = Image.open("anxiousGhost.png", "r").resize((sLen, sLen))
+    bG = Image.open(rpath("anxiousGhost.png"), "r").resize((sLen, sLen))
     blueGhost = bG.filter(ImageFilter.SHARPEN)
     scaredyGhost = filterImage(blueGhost, notBack)
     app.scaredyGhosts = [scaredyGhost for _ in range(len(app.ghostSprites[0]))]
@@ -296,6 +324,23 @@ def developImage(app):
     app.scoreCount += 8000
     
     app.image = image1
+
+def highscoreUpdate(app):
+    try:
+        origin = open('highscores.txt', 'r')
+        bestP = origin.read().splitlines()
+        if app.classic:
+            if app.pScore > int(bestP[0]): bestP[0] = str(app.pScore)
+        elif app.gScore > int(bestP[1]): bestP[1] = str(app.gScore)
+        origin.close()
+        origin = open('highscores.txt', 'w')
+    except:
+        origin = open('highscores.txt', 'w')
+        bestP = ["0", "0"]
+        if app.classic: bestP[0] = str(app.pScore)
+        else: bestP[1] = str(app.gScore)
+    origin.write("\n".join(bestP))
+    origin.close()
 
 def overcoat(app, i, j):
     app.draw.rectangle(getCellBounds(app, i, j), fill=app.background)
@@ -501,6 +546,37 @@ def getCell(app, x, y):
     col = int((x - app.margin) / app.cellSize)
     return row, col
 
+def direct(coordinate):
+    if coordinate == (0, -1): return 'Up'
+    elif coordinate == (0, 1): return 'Down'
+    elif coordinate == (-1, 0): return 'Left'
+    elif coordinate == (1, 0): return 'Right'
+    else: return None
+
+def arrowPress(app):
+    stay = True
+    if app.playerSelect == None: return
+    cDir = app.playerSelect.cDir
+    for move in app.dirs:
+        if keyboard.is_pressed(move) and \
+            (cDir != app.dirs[move]):
+            stay = False
+            d = app.dirs[move]
+            dRow, dCol = d[1], d[0]
+            # but not backwards for ghosts
+            if type(app.playerSelect) == Ghost and \
+                app.playerSelect.isReverse(dRow, dCol):  
+                continue
+            elif app.playerSelect == None:  return
+
+            app.playerSelect.tDir = d
+            app.playerSelect.shiftTempDir(app)
+    key = direct(cDir)
+    if key == None: return
+    elif (stay and keyboard.is_pressed(key)):
+        app.playerSelect.tDir = cDir
+    
+
 def keyPressed(app, event):
     if app.splashScreen or app.gameOver or app.levelChange:    return
 
@@ -519,6 +595,8 @@ def keyPressed(app, event):
         app.colorI += 1
         app.colorI = app.colorI % len(app.colors)
         app.wallColor = app.colors[app.colorI]
+        writeNum('colorchoice.txt', app.colorI)
+        
 
     elif event.key == 's' and app.paused:
         doStep(app)
@@ -564,22 +642,13 @@ def keyPressed(app, event):
         if event.key == '0':    app.playerSelect = None
 
     # allows user to change direction
-    if event.key in app.dirs and app.pauseStarted:
-        d = app.dirs[event.key]
-        dRow, dCol = d[1], d[0]
-        # but not backwards for ghosts
-        if type(app.playerSelect) == Ghost and app.playerSelect.isReverse(dRow, dCol):  
-            return
-        elif app.playerSelect == None:  return
-
-        app.playerSelect.tDir = d
-        app.playerSelect.shiftTempDir(app)
+    # arrowPress(app, event.key)
 
 def doStep(app):
     
     if app.splashScreen or app.gameOver:    return
     gameOver(app)
-    collideWithDot(app)
+    if app.pauseStarted: collideWithDot(app)
     nextRound(app)
     collideWithGhost(app)
     
@@ -609,8 +678,12 @@ def doStep(app):
         if app.pillEaten: 
             goBackwards(app)
 
+        if app.levelChange or app.paused: return
+        else: arrowPress(app)
+
 def chomping(app):
-    if app.widening:    app.mouth -= app.mAcc
+    if not app.pac.keepPlayerOutofWall(app): return
+    elif app.widening:    app.mouth -= app.mAcc
     else:   app.mouth += app.mAcc
     
     if app.mouth == 0:  app.widening = False # mouth is wide open
@@ -668,7 +741,6 @@ def freezeFrame(app, color=None):
     elif app.freeze <= time.time() - 3:
         app.pauseStarted = True
         app.ghostTimer = time.time()
-        app.pScore += 10
         return True
 
 def collideWithGhost(app):
@@ -837,6 +909,15 @@ def drawGameOver(app, canvas):
     else:   tScore = app.gScore
     canvas.create_text(w/2, 2*h/3, text=f'Score: {tScore}', font='fixedsys 40 bold', fill='white')
     canvas.create_text(w/2, 2.5*h/3, text='Click anywhere to return home', font='fixedsys 25', fill='tan')
+    try:
+        hfile = open(rpath('highscores.txt'), 'r')
+        entries = hfile.read().splitlines()
+        if app.classic: hScore = int(entries[0])
+        else: hScore = int(entries[1])
+        hfile.close()
+        canvas.create_text(w/2, 2.25*h/3, text=f'Highscore: {hScore}', font='fixedsys 40 bold', fill='gold')
+    except:
+        pass
 
 def classicInstructions(app, canvas):
     iColor = '#C2D1A3'
@@ -868,18 +949,18 @@ ghosts are purple.
 
 Note: Ghosts can never
 willingly turn backwards.''', fill=iColor, anchor='nw', font=fixed)
-    canvas.create_text(xShift, yShift-9*dy, fill='sky blue', 
+    canvas.create_text(xShift, yShift-8*dy, fill='sky blue', 
     text='- Change ghost with numbers:', anchor='nw', font=fixed)
 
-    canvas.create_text(xShift, yShift-7*dy, fill='red', 
+    canvas.create_text(xShift, yShift-6*dy, fill='red', 
     text='1 - Red (Blinky)', anchor='nw', font=fixed)
-    canvas.create_text(xShift, yShift-6*dy, fill='blue', 
+    canvas.create_text(xShift, yShift-5*dy, fill='blue', 
     text='2 - Blue (Inky)', anchor='nw', font=fixed)
-    canvas.create_text(xShift, yShift-5*dy, fill='pink', 
+    canvas.create_text(xShift, yShift-4*dy, fill='pink', 
     text='3 - Pink (Pinky)', anchor='nw', font=fixed)
-    canvas.create_text(xShift, yShift-4*dy, fill='orange', 
+    canvas.create_text(xShift, yShift-3*dy, fill='orange', 
     text='4 - Orange (Clyde)', anchor='nw', font=fixed)
-    canvas.create_text(xShift, yShift-3*dy, fill='#FAD232', 
+    canvas.create_text(xShift, yShift-2*dy, fill='#FAD232', 
     text='0 - AFK mode (Default)', anchor='nw', font=fixed)
 
 def drawInstructions(app, canvas):
@@ -900,6 +981,8 @@ def drawInstructions(app, canvas):
     '- Toggle pause with "p"', fill='sky blue', anchor='nw', font='fixedsys 16')
     canvas.create_text(xShift, yShift-10*dy, text=
     '- Toggle rules with "i"', fill='sky blue', anchor='nw', font='fixedsys 16')
+    canvas.create_text(xShift, yShift-9*dy, text=
+    '- Change map color with "c"', fill='sky blue', anchor='nw', font='fixedsys 16')
 
 def redrawAll(app, canvas):
     if app.splashScreen:
@@ -1011,9 +1094,8 @@ class Ghost(Runner):
         elif app.revenge:
             interval = 9 + app.level
         
-        elif interval > 15: interval = 15
+        if interval > 15: interval = 15
         
-        dist = 10000
         if interval > 0:
             self.speed = app.slow
             gRow, gCol = getCell(app, self.x, self.y)
@@ -1100,8 +1182,10 @@ def ghostSequence(app):
 def gameOver(app):
     if app.classic and app.lives == 0 and app.pauseStarted:
         app.gameOver = True
+        highscoreUpdate(app)
     elif app.revenge and app.dotCount == 0 and app.powerCount == 0 and app.pauseStarted:
         app.gameOver = True
+        highscoreUpdate(app)
 ''' Classic Game Mode '''
 
 def nextRound(app):
@@ -1109,12 +1193,14 @@ def nextRound(app):
         app.level += 1 
         if app.level == 5:  app.gSpeed = app.pSpeed  
         app.ghostDelay -= 1
+        highscoreUpdate(app)
         roundSetUp(app)
         
     elif app.revenge and app.lives == 0:
         app.lives = 3
         app.level += 1
         app.ghostDelay -= 1
+        highscoreUpdate(app)
         updatePacDifficulty(app)
         roundSetUp(app)
     
