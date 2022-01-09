@@ -1,4 +1,6 @@
 Project Title:	Pac-man Remastered
+User Note: Run pac-man_revenge_v1.2.exe file to play game without running scripts in python
+
 Description:	This project is my variant of a sequel to the original Pac-man by Namco. Traditionally, the user would 
 be able to control a yellow dot (named pac-man) and move within the walls of a maze, all while collecting points and avoiding
 4 ghosts with varying chasing algorithms. This classic mode will still remain present, with the addition of anti-pacman or
