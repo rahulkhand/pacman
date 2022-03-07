@@ -22,10 +22,11 @@ High Quality sprites for pacman and the ghosts
 - When ghosts are scared they have their own improved scared sprite as well
 - Eaten ghosts turn into eyes that run back to the ghost house
 
+Two ways to run the game:
+1. Either run the pac-man_revenge_v1.2.exe directly
+2. Or download the "game" folder directory and execute pac-man_revenge_v1.2.py in a python3 interpreter. 
+Note: If using option 2, make sure to have all python source code and .png files in the same directory.
 
-Please run pac-man_revenge_v1.2.py in a python editor with the other 3 files and the splash image in the same folder as it.
-**You can ignore these steps for running the files if you are running the exe**
-All python files must be actively running and compiled within the same python interpreter.
 This project requires the PIL and requests libraries in order to run the graphics framework and display PIL images.
 All other imported libraries are standard python in-built libraries.
 
@@ -37,8 +38,7 @@ To reach the game over screen in classic, reduce pac-mans lives by taking damage
 Conversely in revenge mode, the next level is triggered by losing lives and the game over screen is triggered by 0 dots remaining.
 The same cheatcodes still apply, but in reverse order of course.
 
-Pressing 'r' at the beginning of a round can change the map, but this function doesn't work at any other time, ironically to prevent
-cheating.
+Pressing 'r' at the beginning of a round can change the map. Pressing 'c' will change map colors.
 
 Note: I recommend using a computer that is plugged in and is relatively fast. 
 
